@@ -1,6 +1,9 @@
 package com.company;
 import java.io.*;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -24,69 +27,28 @@ public class Main {
             BufferedReader bufferedReader =
                     new BufferedReader(fileReader);
 
-            int maxHeight = 0;
-            int maxWidth = 0;
-            List<Integer[]> lines = new ArrayList<Integer[]>();
             while((line = bufferedReader.readLine()) != null) {
-                Pattern p = Pattern.compile("[0-9]+");
-                Matcher m = p.matcher(line);
-                Integer[] ns = new Integer[5];
-                int i = 0;
-                while (m.find()) {
-                    int n = Integer.parseInt(m.group());
-                    // append n to list
-                    ns[i] = n;
-                    i++;
-                }
-                lines.add(ns);
 
-                if (ns[1]+ns[3]+1 > maxWidth) {
-                    maxWidth = ns[1]+ns[3]+1;
-                }
-                if (ns[2]+ns[4]+1 > maxHeight) {
-                    maxHeight = ns[2]+ns[4]+1;
-                }
+                for (int i=0; i<line.length()-1; i++) {
+                    char first = line.charAt(i);
+                    char second = line.charAt(i+1);
 
-  //              System.out.println(ns[0] + " " + ns[1] + " " + ns[2] + " " + ns[3] + " " + ns[4]);
-            }
-            // Always close files.
-            bufferedReader.close();
-
-//            System.out.println(maxHeight + " " + maxWidth + " " + lines.size() );
-
-            int[][] grid = new int[maxWidth][maxHeight];
-            for (int i=0; i<maxWidth; i++) {
-               for (int j=0; j<maxHeight; j++) {
-                   grid[i][j] = 0;
-               }
-            }
-
-            // fill grid
-            int numberOfMultipleClaims = 0;
-            for (int i=0; i<lines.size(); i++) {
-                // (1,3) 4*4
-                // x,y,w,h
-                Integer[] n = lines.get(i);
-                for (int x=n[1]; x<(n[1]+n[3]); x++) {
-                    for (int y=n[2]; y<(n[2]+n[4]); y++) {
-                        grid[x][y] += 1;
-                        if (grid[x][y] == 2) {
-                            numberOfMultipleClaims += 1;
+                    if (Character.toLowerCase(first) == Character.toLowerCase(second) ) {
+                        // remove chars if different case
+                        if ( (Character.isUpperCase(first) && Character.isLowerCase(second) )  || (Character.isLowerCase(first) && Character.isUpperCase(second) ) ){
+                            // remove
+                            line = line.substring(0, i) + line.substring(i+2);
+                            i -= 2;
+                            if (i<0) {
+                                i = -1;
+                            }
                         }
                     }
                 }
+                System.out.println(line.length() + " units");
             }
-
-            System.out.println("Number of multiple claims: " + numberOfMultipleClaims);
-
-            /*
-            for (int i=0; i<maxWidth; i++) {
-                for (int j=0; j<maxHeight; j++) {
-                    System.out.print(grid[i][j]);
-                }
-                System.out.println();
-            }
-            */
+            // Always close files.
+            bufferedReader.close();
 
         }
 
@@ -103,4 +65,5 @@ public class Main {
             // ex.printStackTrace();
         }
     }
+
 }
