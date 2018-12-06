@@ -1,6 +1,9 @@
 package com.company;
 import java.io.*;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -24,69 +27,87 @@ public class Main {
             BufferedReader bufferedReader =
                     new BufferedReader(fileReader);
 
-            int maxHeight = 0;
-            int maxWidth = 0;
-            List<Integer[]> lines = new ArrayList<Integer[]>();
+            int minX = 1000;
+            int minY = 1000;
+            int maxX = 0;
+            int maxY = 0;
+            int numberOfCoordinates = 0;
+            List<int[]> myList = new ArrayList<int[]>();
+
             while((line = bufferedReader.readLine()) != null) {
+
+                // put found coordinates into list
+                // find min/max x/y
                 Pattern p = Pattern.compile("[0-9]+");
                 Matcher m = p.matcher(line);
-                Integer[] ns = new Integer[5];
+                int[] coords = new int[2];
                 int i = 0;
                 while (m.find()) {
                     int n = Integer.parseInt(m.group());
                     // append n to list
-                    ns[i] = n;
+                    coords[i] = n;
                     i++;
                 }
-                lines.add(ns);
-
-                if (ns[1]+ns[3]+1 > maxWidth) {
-                    maxWidth = ns[1]+ns[3]+1;
+                if (coords[0] < minX) {
+                    minX = coords[0];
                 }
-                if (ns[2]+ns[4]+1 > maxHeight) {
-                    maxHeight = ns[2]+ns[4]+1;
+                if (coords[0] > maxX) {
+                    maxX = coords[0];
                 }
-
-  //              System.out.println(ns[0] + " " + ns[1] + " " + ns[2] + " " + ns[3] + " " + ns[4]);
+                if (coords[1] < minY) {
+                    minY = coords[1];
+                }
+                if (coords[1] > maxY) {
+                    maxY = coords[1];
+                }
+                myList.add(coords);
+                ++numberOfCoordinates;
             }
             // Always close files.
             bufferedReader.close();
 
-//            System.out.println(maxHeight + " " + maxWidth + " " + lines.size() );
+            // extend coordinates a bit
+            ++maxX;
+            ++maxY;
+            --minX;
+            --minY;
 
-            int[][] grid = new int[maxWidth][maxHeight];
-            for (int i=0; i<maxWidth; i++) {
-               for (int j=0; j<maxHeight; j++) {
-                   grid[i][j] = 0;
-               }
+            // form a two layer grid
+            int[][][] layers = new int[(maxX)][(maxY)][2]; // last layer: 0: manhattan distance 1: closest coordinate point number
+            // init
+            for (int x=minX; x<maxX; x++) {
+                for (int y=minY; y<maxY; y++) {
+                    layers[x][y][0] = 0;
+                }
             }
+            // find manhattan distances from each grid point to every coordinate
+            for (int x=minX; x<maxX; x++) {
+                for (int y=minY; y<maxY; y++) {
+                    int coordinatePointNumber = 1;
+                    for (int i=0; i<myList.size(); i++) {
+                        int[] c = myList.get(i);
+                        // and now the distance from xy to c01
+                        int distance = Math.abs(x-c[0]) + Math.abs(y-c[1]);
 
-            // fill grid
-            int numberOfMultipleClaims = 0;
-            for (int i=0; i<lines.size(); i++) {
-                // (1,3) 4*4
-                // x,y,w,h
-                Integer[] n = lines.get(i);
-                for (int x=n[1]; x<(n[1]+n[3]); x++) {
-                    for (int y=n[2]; y<(n[2]+n[4]); y++) {
-                        grid[x][y] += 1;
-                        if (grid[x][y] == 2) {
-                            numberOfMultipleClaims += 1;
-                        }
+                        // add all manhattan distances
+                        layers[x][y][0] += distance;
+
+                        ++coordinatePointNumber;
                     }
                 }
             }
+            // store information of min distance to layer 1 and and coordinate number to layer 2
 
-            System.out.println("Number of multiple claims: " + numberOfMultipleClaims);
-
-            /*
-            for (int i=0; i<maxWidth; i++) {
-                for (int j=0; j<maxHeight; j++) {
-                    System.out.print(grid[i][j]);
+            // find area of coordinate points with less tha 10 000 manhattan distance
+            int safeSpace = 0;
+            for (int x=minX; x<maxX; x++) {
+                for (int y = minY; y < maxY; y++) {
+                    if (layers[x][y][0] < 10000) {
+                        ++safeSpace;
+                    }
                 }
-                System.out.println();
             }
-            */
+            System.out.println("Safe space: " + safeSpace);
 
         }
 
@@ -103,4 +124,5 @@ public class Main {
             // ex.printStackTrace();
         }
     }
+    
 }
