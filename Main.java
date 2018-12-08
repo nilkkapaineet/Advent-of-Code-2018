@@ -1,6 +1,9 @@
 package com.company;
 import java.io.*;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -24,69 +27,61 @@ public class Main {
             BufferedReader bufferedReader =
                     new BufferedReader(fileReader);
 
-            int maxHeight = 0;
-            int maxWidth = 0;
-            List<Integer[]> lines = new ArrayList<Integer[]>();
+            List<Step> steps = new ArrayList<>();
             while((line = bufferedReader.readLine()) != null) {
-                Pattern p = Pattern.compile("[0-9]+");
-                Matcher m = p.matcher(line);
-                Integer[] ns = new Integer[5];
-                int i = 0;
-                while (m.find()) {
-                    int n = Integer.parseInt(m.group());
-                    // append n to list
-                    ns[i] = n;
-                    i++;
+                char first = line.charAt(5);
+                char second = line.charAt(36);
+                // form step class, check if it exist already
+                boolean firstFound = false;
+                boolean secondFound = false;
+                for (Step s : steps) {
+                    if (s.getLetter() == first) {
+                        // first step found
+                        firstFound = true;
+                        s.setNext2process(second);
+                    }
+                    if (s.getLetter() == second) {
+                        // Step already exists, add first step to be processed first
+                        s.processThisFirst(first);
+                        secondFound = true;
+                    }
                 }
-                lines.add(ns);
-
-                if (ns[1]+ns[3]+1 > maxWidth) {
-                    maxWidth = ns[1]+ns[3]+1;
+                if (!firstFound) {
+                    Step step = new Step(first, second);
+                    steps.add(step);
                 }
-                if (ns[2]+ns[4]+1 > maxHeight) {
-                    maxHeight = ns[2]+ns[4]+1;
+                if (!secondFound) {
+                    Step step = new Step(second);
+                    step.processThisFirst(first);
+                    steps.add(step);
                 }
-
-  //              System.out.println(ns[0] + " " + ns[1] + " " + ns[2] + " " + ns[3] + " " + ns[4]);
+                // steps are now in the list
             }
             // Always close files.
             bufferedReader.close();
 
-//            System.out.println(maxHeight + " " + maxWidth + " " + lines.size() );
-
-            int[][] grid = new int[maxWidth][maxHeight];
-            for (int i=0; i<maxWidth; i++) {
-               for (int j=0; j<maxHeight; j++) {
-                   grid[i][j] = 0;
-               }
-            }
-
-            // fill grid
-            int numberOfMultipleClaims = 0;
-            for (int i=0; i<lines.size(); i++) {
-                // (1,3) 4*4
-                // x,y,w,h
-                Integer[] n = lines.get(i);
-                for (int x=n[1]; x<(n[1]+n[3]); x++) {
-                    for (int y=n[2]; y<(n[2]+n[4]); y++) {
-                        grid[x][y] += 1;
-                        if (grid[x][y] == 2) {
-                            numberOfMultipleClaims += 1;
-                        }
-                    }
+            // recursive search to find the order of steps
+            // go through list of steps and find one that hasn't prerequisities
+            // there could be many available steps in the beginning as well
+            List<Character> availableSteps = new ArrayList<>();
+            for (Step s : steps) {
+                if (s.getStepsBefore().isEmpty() ) {
+                    s.processing(true);
+                    availableSteps.add(s.getLetter() );
                 }
             }
+            availableSteps.sort(Comparator.naturalOrder());
+            char c = availableSteps.get(0);
+            System.out.print(c);
+            availableSteps.remove(0);
 
-            System.out.println("Number of multiple claims: " + numberOfMultipleClaims);
-
-            /*
-            for (int i=0; i<maxWidth; i++) {
-                for (int j=0; j<maxHeight; j++) {
-                    System.out.print(grid[i][j]);
+            Step startStep = new Step();
+            for (Step s : steps) {
+                if (s.getLetter() == c) {
+                    startStep = s;
                 }
-                System.out.println();
             }
-            */
+            recSearch(startStep, steps, 1, availableSteps);
 
         }
 
@@ -101,6 +96,53 @@ public class Main {
                             + fileName + "'");
             // Or we could just do this:
             // ex.printStackTrace();
+        }
+    }
+
+    public static void recSearch(Step s, List<Step> steps, int processLevel, List<Character> availableSteps) {
+        ++processLevel;
+
+        // released steps added to list of availableSteps if they're really released
+        List<Character> nextOnes = s.getNext2process();
+        nextOnes.sort(Comparator.naturalOrder());
+
+        // check if nextones are available to be processed
+        for (char no : nextOnes) {
+            for (Step ns : steps) {
+                if (no == ns.getLetter()) {
+                    if (ns.clear2process(steps) ) {
+                        // don't add if already found
+                        boolean addFound = false;
+                        for (char da : availableSteps) {
+                            if (da == ns.getLetter() ) {
+                                addFound = true;
+                            }
+                        }
+                        if (!addFound) {
+                            availableSteps.add(ns.getLetter());
+                        }
+                    }
+                }
+            }
+        }
+
+        // if there's stuff in availableSteps, print them first
+        // possible nextones added to available steps
+        availableSteps.sort(Comparator.naturalOrder());
+
+        if (!availableSteps.isEmpty() ){
+            outerloop:
+            for (char avs : availableSteps) {
+                for (Step sav : steps) {
+                    if (sav.getLetter() == avs) {
+                        availableSteps.remove(0);
+                        sav.processing(true);
+                        System.out.print(sav.getLetter() );
+                        recSearch(sav, steps, processLevel, availableSteps);
+                        break outerloop;
+                    }
+                }
+            }
         }
     }
 }
