@@ -1,13 +1,16 @@
 package com.company;
 import java.io.*;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static java.lang.System.exit;
 
 public class Main {
-    public static void main(String [] args) {
+    public static void main(String[] args) {
 
         // The name of the file to open.
         String fileName = "file.txt";
@@ -24,78 +27,49 @@ public class Main {
             BufferedReader bufferedReader =
                     new BufferedReader(fileReader);
 
-            int maxHeight = 0;
-            int maxWidth = 0;
-            List<Integer[]> lines = new ArrayList<Integer[]>();
-            while((line = bufferedReader.readLine()) != null) {
+            List<Integer> numbers = new ArrayList<>();
+
+            while ((line = bufferedReader.readLine()) != null) {
                 Pattern p = Pattern.compile("[0-9]+");
                 Matcher m = p.matcher(line);
-                Integer[] ns = new Integer[5];
-                int i = 0;
                 while (m.find()) {
                     int n = Integer.parseInt(m.group());
                     // append n to list
-                    ns[i] = n;
-                    i++;
+                    numbers.add(n);
                 }
-                lines.add(ns);
-
-                if (ns[1]+ns[3]+1 > maxWidth) {
-                    maxWidth = ns[1]+ns[3]+1;
-                }
-                if (ns[2]+ns[4]+1 > maxHeight) {
-                    maxHeight = ns[2]+ns[4]+1;
-                }
-
-  //              System.out.println(ns[0] + " " + ns[1] + " " + ns[2] + " " + ns[3] + " " + ns[4]);
             }
             // Always close files.
             bufferedReader.close();
 
-//            System.out.println(maxHeight + " " + maxWidth + " " + lines.size() );
-
-            int[][] grid = new int[maxWidth][maxHeight];
-            for (int i=0; i<maxWidth; i++) {
-               for (int j=0; j<maxHeight; j++) {
-                   grid[i][j] = 0;
-               }
-            }
-
-            // fill grid
-            int numberOfMultipleClaims = 0;
-            for (int i=0; i<lines.size(); i++) {
-                // (1,3) 4*4
-                // x,y,w,h
-                Integer[] n = lines.get(i);
-                for (int x=n[1]; x<(n[1]+n[3]); x++) {
-                    for (int y=n[2]; y<(n[2]+n[4]); y++) {
-                        grid[x][y] += 1;
-                        if (grid[x][y] == 2) {
-                            numberOfMultipleClaims += 1;
-                        }
-                    }
-                }
-            }
-
-            System.out.println("Number of multiple claims: " + numberOfMultipleClaims);
-
             /*
-            for (int i=0; i<maxWidth; i++) {
-                for (int j=0; j<maxHeight; j++) {
-                    System.out.print(grid[i][j]);
-                }
-                System.out.println();
-            }
-            */
+            A header, which is always exactly two numbers:
+The quantity of child nodes.
+The quantity of metadata entries.
+Zero or more child nodes (as specified in the header).
+One or more metadata entries (as specified in the header).
+             */
+            // recursive system...
+/*
+            int[] header = new int[2];
+            header[0] = numbers.get(0);
+            header[1] = numbers.get(1);
+            numbers.remove(0);
+            numbers.remove(0);
 
-        }
+            Node firstNode = new Node(1);
+            firstNode.setNumberOfChildNodes(header[0]);
+            firstNode.setNumberOfMetadataEntries(header[1]);
+*/
+            int totalMetadata = 0;
+            totalMetadata += recMetadata(numbers, 0);
 
-        catch(FileNotFoundException ex) {
+            System.out.println("total: " + totalMetadata);
+
+        } catch (FileNotFoundException ex) {
             System.out.println(
                     "Unable to open file '" +
                             fileName + "'");
-        }
-        catch(IOException ex) {
+        } catch (IOException ex) {
             System.out.println(
                     "Error reading file '"
                             + fileName + "'");
@@ -103,4 +77,44 @@ public class Main {
             // ex.printStackTrace();
         }
     }
+
+    public static int recMetadata(List<Integer> numbers, int order) {
+        order++;
+        int tempData = 0;
+        int noChildren = numbers.get(0);
+     //   System.out.println(numbers.get(0));
+        numbers.remove(0);
+        int noMetadata = numbers.get(0);
+     //   System.out.println(numbers.get(0) );
+        numbers.remove(0);
+        Node node = new Node(order);
+        node.setNumberOfChildNodes(noChildren);
+        node.setNumberOfMetadataEntries(noMetadata);
+
+        if (noChildren == 0) {
+            // carry on counting metadata
+            for (int i=0; i<noMetadata; i++) {
+           //     System.out.println(numbers.size() + "_" + noMetadata + "-" + i + "*" + numbers.get(0));
+                node.addMetadata(numbers.get(0));
+                tempData += numbers.get(0);
+      //          System.out.println(numbers.get(0) + "_");
+                numbers.remove(0);
+            }
+            //System.out.println("what" + tempData);
+            return tempData;
+        } else {
+            // recursion for children
+            for (int i=0; i<noChildren; i++) {
+                tempData += recMetadata(numbers, order);
+            }
+        }
+
+        for (int i=0; i<noMetadata; i++) {
+            tempData += numbers.get(0);
+            numbers.remove(0);
+        }
+
+        return tempData;
+    }
+
 }
