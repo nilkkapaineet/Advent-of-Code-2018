@@ -1,106 +1,54 @@
 package com.company;
-import java.io.*;
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-import static java.lang.System.exit;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Main {
-    public static void main(String [] args) {
 
-        // The name of the file to open.
-        String fileName = "file.txt";
+    public static void main(String[] args) {
+	// write your code here
 
-        // This will reference one line at a time
-        String line = "";
+        List<Integer> circle = new ArrayList<>();
+        circle.add(0);
+        circle.add(1);
+        int[] players = new int[493];
+        int lastMove = 71863;
+        int currentPosition = 1;
 
-        try {
-            // FileReader reads text files in the default encoding.
-            FileReader fileReader =
-                    new FileReader(fileName);
-
-            // Always wrap FileReader in BufferedReader.
-            BufferedReader bufferedReader =
-                    new BufferedReader(fileReader);
-
-            int maxHeight = 0;
-            int maxWidth = 0;
-            List<Integer[]> lines = new ArrayList<Integer[]>();
-            while((line = bufferedReader.readLine()) != null) {
-                Pattern p = Pattern.compile("[0-9]+");
-                Matcher m = p.matcher(line);
-                Integer[] ns = new Integer[5];
-                int i = 0;
-                while (m.find()) {
-                    int n = Integer.parseInt(m.group());
-                    // append n to list
-                    ns[i] = n;
-                    i++;
+        for (int i=2; i<=lastMove; i++) {
+            if (i%23 != 0) {
+                if (currentPosition+2 <= circle.size() ) {
+                    circle.add(currentPosition+2, i);
+                    currentPosition += 2;
+                } else {
+                    circle.add(1, i);
+                    currentPosition = 1;
                 }
-                lines.add(ns);
-
-                if (ns[1]+ns[3]+1 > maxWidth) {
-                    maxWidth = ns[1]+ns[3]+1;
-                }
-                if (ns[2]+ns[4]+1 > maxHeight) {
-                    maxHeight = ns[2]+ns[4]+1;
-                }
-
-  //              System.out.println(ns[0] + " " + ns[1] + " " + ns[2] + " " + ns[3] + " " + ns[4]);
-            }
-            // Always close files.
-            bufferedReader.close();
-
-//            System.out.println(maxHeight + " " + maxWidth + " " + lines.size() );
-
-            int[][] grid = new int[maxWidth][maxHeight];
-            for (int i=0; i<maxWidth; i++) {
-               for (int j=0; j<maxHeight; j++) {
-                   grid[i][j] = 0;
-               }
-            }
-
-            // fill grid
-            int numberOfMultipleClaims = 0;
-            for (int i=0; i<lines.size(); i++) {
-                // (1,3) 4*4
-                // x,y,w,h
-                Integer[] n = lines.get(i);
-                for (int x=n[1]; x<(n[1]+n[3]); x++) {
-                    for (int y=n[2]; y<(n[2]+n[4]); y++) {
-                        grid[x][y] += 1;
-                        if (grid[x][y] == 2) {
-                            numberOfMultipleClaims += 1;
-                        }
-                    }
+            } else {
+                // round of points
+                if (currentPosition-7 >= 0) {
+                    currentPosition -= 7;
+                    players[i%players.length] += i;
+                    players[i%players.length] += circle.get(currentPosition);
+                    circle.remove(currentPosition);
+                } else {
+                    // current position goes round to the back of the circle
+                    int temp = 7-currentPosition;
+                    temp = circle.size()-temp;
+                    currentPosition = temp;
+                    players[i%players.length] += i;
+                    players[i%players.length] += circle.get(currentPosition);
+                    circle.remove(currentPosition);
                 }
             }
-
-            System.out.println("Number of multiple claims: " + numberOfMultipleClaims);
-
-            /*
-            for (int i=0; i<maxWidth; i++) {
-                for (int j=0; j<maxHeight; j++) {
-                    System.out.print(grid[i][j]);
-                }
-                System.out.println();
-            }
-            */
-
         }
 
-        catch(FileNotFoundException ex) {
-            System.out.println(
-                    "Unable to open file '" +
-                            fileName + "'");
+        int highest = 0;
+        for (int i : players) {
+            if (i > highest) {
+                highest = i;
+            }
         }
-        catch(IOException ex) {
-            System.out.println(
-                    "Error reading file '"
-                            + fileName + "'");
-            // Or we could just do this:
-            // ex.printStackTrace();
-        }
+        System.out.println(highest);
     }
 }
