@@ -1,106 +1,59 @@
 package com.company;
-import java.io.*;
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import static java.lang.System.exit;
 
 public class Main {
-    public static void main(String [] args) {
 
-        // The name of the file to open.
-        String fileName = "file.txt";
+    public static void main(String[] args) {
+	// actually 9a with linked node list
+        Marble marbleCenter = new Marble(2);
+        Marble marbleLeft = new Marble(0);
+        Marble marbleRight = new Marble(1);
+        marbleCenter.setFollowing(marbleRight);
+        marbleCenter.setPrevious(marbleLeft);
+        marbleLeft.setFollowing(marbleCenter);
+        marbleLeft.setPrevious(marbleRight);
+        marbleRight.setPrevious(marbleCenter);
+        marbleRight.setFollowing(marbleLeft);
+        long[] players = new long[493];
+        int lastMove = 7186300;
 
-        // This will reference one line at a time
-        String line = "";
-
-        try {
-            // FileReader reads text files in the default encoding.
-            FileReader fileReader =
-                    new FileReader(fileName);
-
-            // Always wrap FileReader in BufferedReader.
-            BufferedReader bufferedReader =
-                    new BufferedReader(fileReader);
-
-            int maxHeight = 0;
-            int maxWidth = 0;
-            List<Integer[]> lines = new ArrayList<Integer[]>();
-            while((line = bufferedReader.readLine()) != null) {
-                Pattern p = Pattern.compile("[0-9]+");
-                Matcher m = p.matcher(line);
-                Integer[] ns = new Integer[5];
-                int i = 0;
-                while (m.find()) {
-                    int n = Integer.parseInt(m.group());
-                    // append n to list
-                    ns[i] = n;
-                    i++;
+        // rounds
+        for (int i=3; i<=lastMove; i++) {
+            if (i%23 != 0) {
+                // move once
+                marbleLeft = marbleCenter;
+                marbleCenter = marbleRight;
+                marbleRight = marbleRight.getFollowing();
+                // insert new marble
+                Marble newMarble = new Marble(i);
+                newMarble.setFollowing(marbleRight);
+                newMarble.setPrevious(marbleCenter);
+                marbleCenter.setFollowing(newMarble);
+                marbleRight.setPrevious(newMarble);
+                marbleLeft = marbleCenter;
+                marbleCenter = newMarble;
+            } else {
+                // round of points
+                // move 7 marbles counter clockwise
+                for (int j=0; j<7; j++) {
+                    marbleRight = marbleCenter;
+                    marbleCenter = marbleLeft;
+                    marbleLeft = marbleLeft.getPrevious();
                 }
-                lines.add(ns);
-
-                if (ns[1]+ns[3]+1 > maxWidth) {
-                    maxWidth = ns[1]+ns[3]+1;
-                }
-                if (ns[2]+ns[4]+1 > maxHeight) {
-                    maxHeight = ns[2]+ns[4]+1;
-                }
-
-  //              System.out.println(ns[0] + " " + ns[1] + " " + ns[2] + " " + ns[3] + " " + ns[4]);
+                // remove marble
+                players[i%players.length] += marbleCenter.getWorth();
+                players[i%players.length] += i;
+                marbleLeft.setFollowing(marbleRight);
+                marbleRight.setPrevious(marbleLeft);
+                marbleCenter = marbleRight;
+                marbleRight = marbleRight.getFollowing();
             }
-            // Always close files.
-            bufferedReader.close();
-
-//            System.out.println(maxHeight + " " + maxWidth + " " + lines.size() );
-
-            int[][] grid = new int[maxWidth][maxHeight];
-            for (int i=0; i<maxWidth; i++) {
-               for (int j=0; j<maxHeight; j++) {
-                   grid[i][j] = 0;
-               }
-            }
-
-            // fill grid
-            int numberOfMultipleClaims = 0;
-            for (int i=0; i<lines.size(); i++) {
-                // (1,3) 4*4
-                // x,y,w,h
-                Integer[] n = lines.get(i);
-                for (int x=n[1]; x<(n[1]+n[3]); x++) {
-                    for (int y=n[2]; y<(n[2]+n[4]); y++) {
-                        grid[x][y] += 1;
-                        if (grid[x][y] == 2) {
-                            numberOfMultipleClaims += 1;
-                        }
-                    }
-                }
-            }
-
-            System.out.println("Number of multiple claims: " + numberOfMultipleClaims);
-
-            /*
-            for (int i=0; i<maxWidth; i++) {
-                for (int j=0; j<maxHeight; j++) {
-                    System.out.print(grid[i][j]);
-                }
-                System.out.println();
-            }
-            */
-
         }
-
-        catch(FileNotFoundException ex) {
-            System.out.println(
-                    "Unable to open file '" +
-                            fileName + "'");
+        long highest = 0;
+        for (long i : players) {
+            if (i > highest) {
+                highest = i;
+            }
         }
-        catch(IOException ex) {
-            System.out.println(
-                    "Error reading file '"
-                            + fileName + "'");
-            // Or we could just do this:
-            // ex.printStackTrace();
-        }
+        System.out.println(highest);
     }
 }
