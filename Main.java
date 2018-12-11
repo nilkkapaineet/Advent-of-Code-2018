@@ -79,24 +79,19 @@ public class Main {
                 numbers = transformCoordinates(numbers, highestX, highestY, lowestX, lowestY);
                 PointOfLight pol = new PointOfLight(numbers);
                 pols.add(pol);
-
-                //System.out.println(numbers[0] + " " + numbers[1] + " " + numbers[2] + " " + numbers[3]);
             }
+
             // Always close files.
             bufferedReader.close();
-
-       //     System.out.println("hx: " + highestX + " hy: " + highestY + " lx: " + lowestX + " ly: " + lowestY + " size: " + pols.size() );
 
             Collections.sort(pols, Comparator.comparingInt(PointOfLight ::getY));
 
             boolean aligned = false;
             while (true) {
-          //      System.out.println("sec " + i);
                 int[] limits = limits(pols);
-                if (limits[3] - limits[1] <= 8) {
-                   // System.out.println("x: " + limits[0] + " -> " + limits[3] + " y: " + limits[1] + " -> " + limits[3]);
+                if (limits[3] - limits[1] <= 15) {
                     printSky(pols, (highestY - lowestY), highestX, limits[0], limits[1], limits[3]);
-                    if (limits[3] - limits[1] <= 8) {
+                    if (limits[3] - limits[1] <= 11) {
                     //    System.out.println(" jep ");
                     }
                     exit (0);
@@ -118,10 +113,10 @@ public class Main {
     }
 
     public static int[] limits(List<PointOfLight> pols) {
-        int lowestXx = 1000;
-        int lowestYy = 1000;
-        int highestXx = -1000;
-        int highestYy = -1000;
+        int lowestXx = 100000;
+        int lowestYy = 100000;
+        int highestXx = -100000;
+        int highestYy = -100000;
         for (PointOfLight p : pols) {
                 if (p.getX() < lowestXx) {
                     lowestXx = p.getX();
