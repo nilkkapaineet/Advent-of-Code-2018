@@ -1,10 +1,14 @@
 package com.company;
 import java.io.*;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static java.lang.System.exit;
+import static java.lang.System.out;
 
 public class Main {
     public static void main(String [] args) {
@@ -24,69 +28,64 @@ public class Main {
             BufferedReader bufferedReader =
                     new BufferedReader(fileReader);
 
-            int maxHeight = 0;
-            int maxWidth = 0;
-            List<Integer[]> lines = new ArrayList<Integer[]>();
+            HashMap<String, String> hmap = new HashMap<String, String>();
+            int lines = 0;
+            String initialState = ".....";
             while((line = bufferedReader.readLine()) != null) {
-                Pattern p = Pattern.compile("[0-9]+");
-                Matcher m = p.matcher(line);
-                Integer[] ns = new Integer[5];
-                int i = 0;
-                while (m.find()) {
-                    int n = Integer.parseInt(m.group());
-                    // append n to list
-                    ns[i] = n;
-                    i++;
-                }
-                lines.add(ns);
 
-                if (ns[1]+ns[3]+1 > maxWidth) {
-                    maxWidth = ns[1]+ns[3]+1;
-                }
-                if (ns[2]+ns[4]+1 > maxHeight) {
-                    maxHeight = ns[2]+ns[4]+1;
+                if (lines == 0) {
+                    // initial state from char 15
+                    initialState = initialState.concat(line.substring(15) );
+                    initialState = initialState.concat("........................");
+             //       System.out.println(initialState);
                 }
 
-  //              System.out.println(ns[0] + " " + ns[1] + " " + ns[2] + " " + ns[3] + " " + ns[4]);
+                if (lines > 1) {
+                    // rules here
+                    String input = line.substring(0, 5);
+                    String output = line.substring(line.length()-1 );
+  //                  System.out.println(input + " -> " + output);
+                    hmap.put(input, output);
+                }
+                lines++;
             }
             // Always close files.
             bufferedReader.close();
 
-//            System.out.println(maxHeight + " " + maxWidth + " " + lines.size() );
-
-            int[][] grid = new int[maxWidth][maxHeight];
-            for (int i=0; i<maxWidth; i++) {
-               for (int j=0; j<maxHeight; j++) {
-                   grid[i][j] = 0;
-               }
-            }
-
-            // fill grid
-            int numberOfMultipleClaims = 0;
-            for (int i=0; i<lines.size(); i++) {
-                // (1,3) 4*4
-                // x,y,w,h
-                Integer[] n = lines.get(i);
-                for (int x=n[1]; x<(n[1]+n[3]); x++) {
-                    for (int y=n[2]; y<(n[2]+n[4]); y++) {
-                        grid[x][y] += 1;
-                        if (grid[x][y] == 2) {
-                            numberOfMultipleClaims += 1;
-                        }
+           System.out.println("0: " + initialState);
+            // do the growing
+            for (int i=1; i<21; i++) {
+                // get a char by char from initial state beginning from char 3
+                // char is an input, output is checked from hmap
+                // if no match found, give .
+                System.out.print(i + ": ..");
+                String nextRound = "..";
+                for (int j=0; j<initialState.length()-4; j++) {
+                    String c = initialState.substring(j, j + 5);
+//                    System.out.println(c);
+                    // search from hmap
+                    String output = ".";
+                    if (hmap.containsKey(c)) {
+                        output = hmap.get(c);
                     }
+                    System.out.print(output);
+                    nextRound = nextRound.concat(output);
                 }
+                initialState = nextRound;
+                initialState = initialState.concat("..");
+                System.out.println("");
+          //      break;
             }
 
-            System.out.println("Number of multiple claims: " + numberOfMultipleClaims);
-
-            /*
-            for (int i=0; i<maxWidth; i++) {
-                for (int j=0; j<maxHeight; j++) {
-                    System.out.print(grid[i][j]);
+            // each pot produce points in respect to its position
+            // positions start from -5
+            int score = 0;
+            for (int i=0; i<initialState.length(); i++) {
+                if (initialState.charAt(i) == '#') {
+                    score += (i-5);
                 }
-                System.out.println();
             }
-            */
+            System.out.println("score is: " + score);
 
         }
 
@@ -103,4 +102,5 @@ public class Main {
             // ex.printStackTrace();
         }
     }
+
 }
