@@ -1,13 +1,16 @@
 package com.company;
 import java.io.*;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static java.lang.System.exit;
 
 public class Main {
-    public static void main(String [] args) {
+    public static void main(String[] args) {
 
         // The name of the file to open.
         String fileName = "file.txt";
@@ -24,83 +27,64 @@ public class Main {
             BufferedReader bufferedReader =
                     new BufferedReader(fileReader);
 
-            int maxHeight = 0;
-            int maxWidth = 0;
-            List<Integer[]> lines = new ArrayList<Integer[]>();
-            while((line = bufferedReader.readLine()) != null) {
-                Pattern p = Pattern.compile("[0-9]+");
+            List<Nanobot> nanobots = new ArrayList<>();
+
+            while ((line = bufferedReader.readLine()) != null) {
+                Pattern p = Pattern.compile("-?[0-9]+");
                 Matcher m = p.matcher(line);
-                Integer[] ns = new Integer[5];
+                int[] n = new int[4];
                 int i = 0;
                 while (m.find()) {
-                    int n = Integer.parseInt(m.group());
-                    // append n to list
-                    ns[i] = n;
+                    n[i] = Integer.parseInt(m.group());
                     i++;
                 }
-                lines.add(ns);
-
-                if (ns[1]+ns[3]+1 > maxWidth) {
-                    maxWidth = ns[1]+ns[3]+1;
-                }
-                if (ns[2]+ns[4]+1 > maxHeight) {
-                    maxHeight = ns[2]+ns[4]+1;
-                }
-
-  //              System.out.println(ns[0] + " " + ns[1] + " " + ns[2] + " " + ns[3] + " " + ns[4]);
+                Nanobot nanobot = new Nanobot(n);
+                nanobots.add(nanobot);
             }
             // Always close files.
             bufferedReader.close();
 
-//            System.out.println(maxHeight + " " + maxWidth + " " + lines.size() );
-
-            int[][] grid = new int[maxWidth][maxHeight];
-            for (int i=0; i<maxWidth; i++) {
-               for (int j=0; j<maxHeight; j++) {
-                   grid[i][j] = 0;
-               }
+            // find strongest nanobot i.e. greatest range
+            Nanobot nanobot = new Nanobot();
+            int range = 0;
+            for (Nanobot n : nanobots) {
+                if (n.getRange() > range) {
+                    nanobot = n;
+                    range = n.getRange();
+                }
             }
+            System.out.println("Strongest nanobot is a nanobot with range of " + nanobot.getRange() );
 
-            // fill grid
-            int numberOfMultipleClaims = 0;
-            for (int i=0; i<lines.size(); i++) {
-                // (1,3) 4*4
-                // x,y,w,h
-                Integer[] n = lines.get(i);
-                for (int x=n[1]; x<(n[1]+n[3]); x++) {
-                    for (int y=n[2]; y<(n[2]+n[4]); y++) {
-                        grid[x][y] += 1;
-                        if (grid[x][y] == 2) {
-                            numberOfMultipleClaims += 1;
-                        }
-                    }
+            // find nanobots within range
+            int withinRange = 0;
+            for (Nanobot n : nanobots) {
+                if (isWithinRange(withinRange, nanobot, n) ) {
+                    withinRange++;
                 }
             }
 
-            System.out.println("Number of multiple claims: " + numberOfMultipleClaims);
+            System.out.println("There are " + withinRange + " within range.");
 
-            /*
-            for (int i=0; i<maxWidth; i++) {
-                for (int j=0; j<maxHeight; j++) {
-                    System.out.print(grid[i][j]);
-                }
-                System.out.println();
-            }
-            */
-
-        }
-
-        catch(FileNotFoundException ex) {
+        } catch (FileNotFoundException ex) {
             System.out.println(
                     "Unable to open file '" +
                             fileName + "'");
-        }
-        catch(IOException ex) {
+        } catch (IOException ex) {
             System.out.println(
                     "Error reading file '"
                             + fileName + "'");
             // Or we could just do this:
             // ex.printStackTrace();
         }
+    }
+
+    public static boolean isWithinRange(int w, Nanobot range, Nanobot n) {
+        boolean withinRange = false;
+        int manhattanDistance = Math.abs(range.getX() - n.getX()) + Math.abs(range.getY() - n.getY()) + Math.abs(range.getZ() - n.getZ());
+        if (manhattanDistance <= range.getRange() ) {
+            withinRange = true;
+        }
+//        System.out.println(w + ": " + manhattanDistance + " " + range.getRange());
+        return withinRange;
     }
 }
